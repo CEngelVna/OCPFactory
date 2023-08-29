@@ -39,13 +39,11 @@
    </TPOOL>
    <DESCRIPTIONS>
     <SEOCOMPOTX>
-     <CLSNAME>ZCL_OCP_FACTORY</CLSNAME>
      <CMPNAME>LIST_OF_IMPLEMENTING_CLASSES</CMPNAME>
      <LANGU>E</LANGU>
      <DESCRIPT>Given Interface, Return List of Implementing Classes</DESCRIPT>
     </SEOCOMPOTX>
     <SEOCOMPOTX>
-     <CLSNAME>ZCL_OCP_FACTORY</CLSNAME>
      <CMPNAME>RETURN_OBJECT_GIVEN</CMPNAME>
      <LANGU>E</LANGU>
      <DESCRIPT>Given Context Data, Return Appropriate Concrete Instance</DESCRIPT>

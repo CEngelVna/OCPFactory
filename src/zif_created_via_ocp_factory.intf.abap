@@ -1,5 +1,6 @@
 interface ZIF_CREATED_VIA_OCP_FACTORY
   public .
+  TYPES: tab TYPE STANDARD TABLE OF REF TO zif_created_via_ocp_factory WITH DEFAULT KEY.
 
 
   class-data DEFAULT_CLASS type SEOCLSNAME .

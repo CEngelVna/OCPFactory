@@ -1,28 +1,38 @@
-class ZCL_OCP_FACTORY definition
-  public
-  create public .
+CLASS zcl_ocp_factory DEFINITION
+  PUBLIC
+  CREATE PUBLIC .
 
-public section.
+  PUBLIC SECTION.
 
-  class-methods RETURN_OBJECT_GIVEN
-    importing
-      !IT_CONTEXT_DATA type WDR_SIMPLE_NAME_VALUE_LIST
-      !IT_CONSTRUCTOR_PARAMETERS type ABAP_PARMBIND_TAB optional
-    changing
-      !CO_OBJECT type ANY .
-protected section.
-private section.
+    CLASS-METHODS return_object_given
+      IMPORTING
+        !it_context_data           TYPE wdr_simple_name_value_list
+        !it_constructor_parameters TYPE abap_parmbind_tab OPTIONAL
+      CHANGING
+        !co_object                 TYPE any .
+    CLASS-METHODS return_object_given_with_cache
+      IMPORTING
+        !it_context_data           TYPE wdr_simple_name_value_list
+        !it_constructor_parameters TYPE abap_parmbind_tab OPTIONAL
+      CHANGING
+        !co_object                 TYPE any .
+  PROTECTED SECTION.
+  PRIVATE SECTION.
 
-  class-methods LIST_OF_IMPLEMENTING_CLASSES
-    importing
-      !ID_INTERFACE type SEOCLSKEY
-    returning
-      value(RT_CLASSES) type SEOR_IMPLEMENTING_KEYS .
+    CLASS-DATA: mt_classes TYPE TABLE OF ref to Object.
+
+    CLASS-METHODS list_of_implementing_classes
+      IMPORTING
+        !id_interface     TYPE seoclskey
+      RETURNING
+        VALUE(rt_classes) TYPE seor_implementing_keys .
+
+
 ENDCLASS.
 
 
 
-CLASS ZCL_OCP_FACTORY IMPLEMENTATION.
+CLASS zcl_ocp_factory IMPLEMENTATION.
 
 
   METHOD list_of_implementing_classes.
@@ -78,7 +88,7 @@ CLASS ZCL_OCP_FACTORY IMPLEMENTATION.
       "order i.e. more specialized classes first
       ld_current_line = lines( lt_subclasses[] ).
 
-      DO."#EC CI_NESTED
+      DO.                                                "#EC CI_NESTED
         READ TABLE lt_subclasses INTO ls_subclasses INDEX ld_current_line.
 
         IF sy-subrc <> 0.
@@ -132,7 +142,7 @@ CLASS ZCL_OCP_FACTORY IMPLEMENTATION.
     DATA(implementing_class_list) = list_of_implementing_classes( converted_interface_name ).
 
     "Dynamically create the parameters to be passed to the method
-    DATA: is_the_right_class_type_given TYPE tmdir-methodname VALUE 'IS_THE_RIGHT_CLASS_TYPE_GIVEN',
+    DATA: is_the_right_class_type_given TYPE tmdir-methodname VALUE 'ZIF_CREATED_VIA_OCP_FACTORY~IS_THE_RIGHT_CLASS_TYPE_GIVEN',
           this_is_the_class_we_want     TYPE abap_bool,
           dynamic_parameters            TYPE abap_parmbind_tab.
 
@@ -166,10 +176,10 @@ CLASS ZCL_OCP_FACTORY IMPLEMENTATION.
           ENDIF.
 
         CATCH cx_sy_dyn_call_illegal_method.
-          zcl_dbc=>require(
-          that             = |{ 'Interface'(001) } { interface_passed_in } | &&
-                             |{ 'does not implement ZIF_CREATED_VIA_OCP_FACTORY'(003) }|
-          which_is_true_if = abap_false ).
+*          zcl_dbc=>require(
+*          that             = |{ 'Interface'(001) } { interface_passed_in } | &&
+*                             |{ 'does not implement ZIF_CREATED_VIA_OCP_FACTORY'(003) }|
+*          which_is_true_if = abap_false ).
       ENDTRY.
 
     ENDLOOP."Classes that implement the desired interface
@@ -192,30 +202,74 @@ CLASS ZCL_OCP_FACTORY IMPLEMENTATION.
             ENDIF.
 
           CATCH cx_sy_dyn_call_illegal_method.
-            zcl_dbc=>require(
-            that             = |{ 'Interface'(001) } { interface_passed_in } | &&
-                               |{ 'does not implement ZIF_CREATED_VIA_OCP_FACTORY'(003) }|
-            which_is_true_if = abap_false ).
+*            zcl_dbc=>require(
+*            that             = |{ 'Interface'(001) } { interface_passed_in } | &&
+*                               |{ 'does not implement ZIF_CREATED_VIA_OCP_FACTORY'(003) }|
+*            which_is_true_if = abap_false ).
         ENDTRY.
       ENDLOOP.
     ENDIF.
 
-    "If no approriate subclass has been found, then find the SUPERCLASS - default (fallback) implementation
-    IF co_object IS NOT BOUND.
-      LOOP AT implementing_class_list ASSIGNING <implementing_class> WHERE refclsname EQ converted_interface_name.
-        IF it_constructor_parameters IS NOT SUPPLIED.
-          CREATE OBJECT co_object TYPE (<implementing_class>-clsname).
-        ELSE.
-          CREATE OBJECT co_object TYPE (<implementing_class>-clsname)
-          PARAMETER-TABLE it_constructor_parameters.
-        ENDIF.
-        RETURN.
-      ENDLOOP.
-    ENDIF.
+*    "If no approriate subclass has been found, then find the SUPERCLASS - default (fallback) implementation
+*    IF co_object IS NOT BOUND.
+*      LOOP AT implementing_class_list ASSIGNING <implementing_class> WHERE refclsname EQ converted_interface_name.
+*        IF it_constructor_parameters IS NOT SUPPLIED.
+*          CREATE OBJECT co_object TYPE (<implementing_class>-clsname).
+*        ELSE.
+*          CREATE OBJECT co_object TYPE (<implementing_class>-clsname)
+*          PARAMETER-TABLE it_constructor_parameters.
+*        ENDIF.
+*        RETURN.
+*      ENDLOOP.
+*    ENDIF.
 
-    zcl_dbc=>require(
-    that             = |{ 'Interface'(001) } { interface_passed_in } { 'needs a Default Class'(002) }|
-    which_is_true_if = xsdbool( co_object IS BOUND ) ).
+*    zcl_dbc=>require(
+*    that             = |{ 'Interface'(001) } { interface_passed_in } { 'needs a Default Class'(002) }|
+*    which_is_true_if = xsdbool( co_object IS BOUND ) ).
 
   ENDMETHOD.
+  METHOD return_object_given_with_cache.
+    "Dynamically create the parameters to be passed to the method
+    DATA: is_the_right_class_type_given TYPE tmdir-methodname VALUE 'ZIF_CREATED_VIA_OCP_FACTORY~IS_THE_RIGHT_CLASS_TYPE_GIVEN',
+          this_is_the_class_we_want     TYPE abap_bool,
+          dynamic_parameters            TYPE abap_parmbind_tab.
+
+
+    INSERT VALUE #(
+    name = 'IT_CONTEXT_DATA'
+    kind = cl_abap_objectdescr=>exporting
+    value = REF #( it_context_data ) ) INTO TABLE dynamic_parameters.
+
+    INSERT VALUE #(
+    name = 'RF_YES_IT_IS'
+    kind = cl_abap_objectdescr=>returning
+    value = REF #( this_is_the_class_we_want ) ) INTO TABLE dynamic_parameters.
+
+    LOOP AT mt_classes INTO data(class).
+
+      CALL METHOD class->(is_the_right_class_type_given)
+        PARAMETER-TABLE dynamic_parameters.
+
+      IF this_is_the_class_we_want = abap_true.
+        co_object ?= class .
+        RETURN.
+      ENDIF.
+    ENDLOOP.
+
+    IF NOT co_object IS BOUND.
+      return_object_given(
+        EXPORTING
+          it_context_data           = it_context_data
+          it_constructor_parameters = it_constructor_parameters
+        CHANGING
+          co_object                 = co_object
+      ).
+
+      if co_object is bound.
+      insert co_object into table mt_classes.
+      ENDIF.
+
+    ENDIF.
+  ENDMETHOD.
+
 ENDCLASS.
